@@ -124,7 +124,7 @@ begin
             prevMouseEvent  <= MouseEvent;
             if (prevMouseEvent /= MouseEvent) then
                 mouseIncX := resize(MouseX, mouseIncX'length);
-                mouseIncX := resize(MouseY, mouseIncX'length);
+                mouseIncY := resize(MouseY, mouseIncX'length);
             else
                 mouseIncX := to_signed(0, mouseIncX'length);
                 mouseIncY := to_signed(0, mouseIncY'length);
