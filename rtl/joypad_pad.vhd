@@ -176,26 +176,6 @@ begin
                               mouseSave       <= isMouse;
                               receiveValid    <= '1';
                               receiveBuffer   <= x"FF";
-
-                              if (mouseAccX >= 127) then
-                                  mouseOutX <= to_signed(127, mouseOutX'length);
-                              elsif (mouseAccX <= -128) then
-                                  mouseOutX <= to_signed(-128, mouseOutX'length);
-                              else
-                                  mouseOutX <= resize(mouseAccX, mouseOutX'length);
-                              end if;
-
-                              if (mouseAccY >= 127) then
-                                  mouseOutY <= to_signed(127, mouseOutY'length);
-                              elsif (mouseAccY <= -128) then
-                                  mouseOutY <= to_signed(-128, mouseOutY'length);
-                              else
-                                  mouseOutY <= resize(mouseAccY, mouseOutY'length);
-                              end if;
-
-                              mouseAccX <= mouseIncX;
-                              mouseAccY <= mouseIncY;
-
                            end if;
                            
                         when READY => 
@@ -223,6 +203,25 @@ begin
                            receiveValid    <= '1';
                            
                         when MOUSEBUTTONSLSB =>
+                           if (mouseAccX >= 127) then
+                               mouseOutX <= to_signed(127, mouseOutX'length);
+                           elsif (mouseAccX <= -128) then
+                               mouseOutX <= to_signed(-128, mouseOutX'length);
+                           else
+                               mouseOutX <= resize(mouseAccX, mouseOutX'length);
+                           end if;
+
+                           if (mouseAccY >= 127) then
+                               mouseOutY <= to_signed(127, mouseOutY'length);
+                           elsif (mouseAccY <= -128) then
+                               mouseOutY <= to_signed(-128, mouseOutY'length);
+                           else
+                               mouseOutY <= resize(mouseAccY, mouseOutY'length);
+                           end if;
+
+                           mouseAccX <= mouseIncX;
+                           mouseAccY <= mouseIncY;
+
                            controllerState <= MOUSEBUTTONSMSB;
                            receiveBuffer   <= x"FF";
                            ack             <= '1';
