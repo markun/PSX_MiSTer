@@ -160,6 +160,7 @@ begin
                         isActive        <= '1';
                         ack             <= '1'; 
                         analogPadSave   <= analogPad;
+                        mouseSave       <= isMouse;
                         receiveValid    <= '1';
                         receiveBuffer   <= x"FF";
 
