@@ -1781,6 +1781,7 @@ begin
             if (LIDopen = '1') then
                internalStatus(4) <= '1';
             elsif (shell_close = '1') then
+               internalStatus(1) <= '1'; -- motor on
                internalStatus(4) <= '0';
             end if;
             
