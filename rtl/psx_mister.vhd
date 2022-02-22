@@ -128,11 +128,13 @@ entity psx_mister is
       PadPortMouse1         : in  std_logic;
       PadPortGunCon1        : in  std_logic;
       PadPortneGcon1        : in  std_logic;
+      PadPortHybrid1        : in  std_logic;
       PadPortEnable2        : in  std_logic;
       PadPortAnalog2        : in  std_logic;
       PadPortMouse2         : in  std_logic;
       PadPortGunCon2        : in  std_logic;
       PadPortneGcon2        : in  std_logic;
+      PadPortHybrid2        : in  std_logic;
       KeyTriangle           : in  std_logic_vector(1 downto 0); 
       KeyCircle             : in  std_logic_vector(1 downto 0); 
       KeyCross              : in  std_logic_vector(1 downto 0); 
@@ -327,11 +329,13 @@ begin
       PadPortMouse1         => PadPortMouse1,
       PadPortGunCon1        => PadPortGunCon1,
       PadPortNeGcon1        => PadPortNeGcon1,
+      PadPortHybrid1        => PadPortHybrid1,
       PadPortEnable2        => PadPortEnable2,
       PadPortAnalog2        => PadPortAnalog2,
       PadPortMouse2         => PadPortMouse2, 
       PadPortGunCon2        => PadPortGunCon2,
       PadPortNeGcon2        => PadPortNeGcon2,
+      PadPortHybrid2        => PadPortHybrid2,
       KeyTriangle           => KeyTriangle,           
       KeyCircle             => KeyCircle,           
       KeyCross              => KeyCross,           

@@ -14,6 +14,7 @@ entity joypad_pad is
       isMouse              : in  std_logic;
       isGunCon             : in  std_logic;
       isNeGcon             : in  std_logic;
+      isHybrid             : in  std_logic;
       
       selected             : in  std_logic;
       actionNext           : in  std_logic := '0';
@@ -93,6 +94,10 @@ architecture arch of joypad_pad is
    signal mouseSave       : std_logic := '0';
    signal gunConSave      : std_logic := '0';
    signal neGconSave      : std_logic := '0';
+   signal hybridSave      : std_logic := '0';
+
+   signal wasAnalogMoved  : std_logic := '0';
+   signal isHybridAnalog  : std_logic := '0';
 
    signal prevMouseEvent  : std_logic := '0';
 
@@ -115,6 +120,7 @@ begin
    variable newMouseAccY         : signed(9 downto 0) := (others => '0');
    variable newMouseAccClippedX  : signed(9 downto 0) := (others => '0');
    variable newMouseAccClippedY  : signed(9 downto 0) := (others => '0');
+   variable isAnalogMoved   : std_logic := '0';
 
    begin
       if rising_edge(clk1x) then
@@ -181,6 +187,7 @@ begin
                         mouseSave       <= isMouse;
                         gunConSave      <= isGunCon;
                         neGconSave      <= isNeGcon;
+                        hybridSave      <= isHybrid;
                         receiveValid    <= '1';
                         receiveBuffer   <= x"FF";
 
@@ -196,13 +203,28 @@ begin
                               mouseSave       <= isMouse;
                               gunConSave      <= isGunCon;
                               neGconSave      <= isNeGcon;
+                              HybridSave      <= isHybrid;
                               receiveValid    <= '1';
                               receiveBuffer   <= x"FF";
                            end if;
                            
-                        when READY => 
+                        when READY =>
                            if (transmitValue = x"42") then
-                              if (mouseSave = '1') then
+                              if (hybridSave = '1') then
+                                 if (Analog1X /= 0 or Analog1Y /= 0 or Analog2X /= 0 or Analog2Y /= 0) then
+                                    isAnalogMoved := '1';
+                                 else
+                                    isAnalogMoved := '0';
+                                 end if;
+                                 wasAnalogMoved <= isAnalogMoved; -- for last analog command when sticks go back to 0
+                                 if (isAnalogMoved or wasAnalogMoved) then
+                                    isHybridAnalog <= '1';
+                                    receiveBuffer   <= x"73";
+                                 else
+                                    isHybridAnalog <= '0';
+                                    receiveBuffer   <= x"41";
+                                 end if;
+                              elsif (mouseSave = '1') then
                                  receiveBuffer   <= x"12";
                               elsif (gunConSave = '1') then
                                  receiveBuffer   <= x"63";
@@ -380,7 +402,7 @@ begin
                            receiveBuffer(6) <= not KeyCross;
                            receiveBuffer(7) <= not KeySquare;
                            receiveValid     <= '1';
-                           if (analogPadSave = '1') then
+                           if (analogPadSave = '1' or isHybridAnalog = '1') then
                               controllerState <= ANALOGRIGHTX;
                               ack <= '1';
                            else

@@ -18,11 +18,13 @@ entity joypad is
       PadPortMouse1        : in  std_logic;
       PadPortGunCon1       : in  std_logic;
       PadPortNeGcon1       : in  std_logic;
+      PadPortHybrid1       : in  std_logic;
       PadPortEnable2       : in  std_logic;
       PadPortAnalog2       : in  std_logic;
       PadPortMouse2        : in  std_logic;
       PadPortGunCon2       : in  std_logic;
       PadPortNeGcon2       : in  std_logic;
+      PadPortHybrid2       : in  std_logic;
       
       memcard1_available   : in  std_logic;
       memcard2_available   : in  std_logic;
@@ -368,6 +370,7 @@ begin
       isMouse              => PadPortMouse1,
       isGunCon             => PadPortGunCon1,
       isNeGcon             => PadPortNeGcon1,
+      isHybrid             => PadPortHybrid1,
 
       selected             => selectedPad1,
       actionNext           => actionNextPad,
@@ -422,6 +425,7 @@ begin
       isMouse              => PadPortMouse2,
       isGunCon             => PadPortGunCon2,
       isNeGcon             => PadPortNeGcon2,
+      isHybrid             => PadPortHybrid2,
 
       selected             => selectedPad2,
       actionNext           => actionNextPad,
