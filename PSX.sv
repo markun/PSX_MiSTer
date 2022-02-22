@@ -600,8 +600,8 @@ defparam savestate_ui.INFO_TIMEOUT_BITS = 27;
 ////////////////////////////  PAD  ///////////////////////////////////
 
 // 000 -> digital
-// 000 -> analog
-// 000 -> mouse
+// 001 -> analog
+// 010 -> mouse
 // 011 -> off
 // 100 -> Namco GunCon lightgun
 // 101 -> Namco NeGcon
