@@ -13,6 +13,7 @@ entity joypad_pad is
       
       joypad               : in  joypad_t;
       rumble               : out std_logic_vector(15 downto 0);
+      portNr               : in integer range 0 to 1;
 
       isPal                : in  std_logic;
       
@@ -36,6 +37,7 @@ entity joypad_pad is
       GunX                 : in  unsigned(7 downto 0);
       GunY_scanlines       : in  unsigned(8 downto 0);
       GunAimOffscreen      : in  std_logic
+
    );
 end entity;
 
@@ -67,15 +69,38 @@ architecture arch of joypad_pad is
       NEGCONANALOGI,
       NEGCONANALOGII,
       NEGCONANALOGL,
-      ROMRESPONSE
+      ROMRESPONSE,
+      CHANGECONFIG,
+      SETSTATELSB,
+      SETSTATEMSB,
+      GETSTATE,
+      COMMAND46,
+      COMMAND47,
+      COMMAND4C
    );
    signal controllerState : tcontrollerState := IDLE;
-   
+   signal nextState : tcontrollerState := IDLE;
+
+   type tcommands is
+   (
+      COMMAND_NONE,
+      COMMAND_READ_INPUTS,
+      COMMAND_CHANGE_CONFIG_MODE,
+      COMMAND_GET_STATE,
+      COMMAND_SET_STATE,
+      COMMAND_46,
+      COMMAND_47,
+      COMMAND_4C,
+      COMMAND_UNKNOWN
+   );
+   signal command : tcommands := COMMAND_NONE;
+
    signal analogPadSave   : std_logic := '0';
    signal rumbleOnFirst   : std_logic := '0';
    signal mouseSave       : std_logic := '0';
    signal gunConSave      : std_logic := '0';
    signal neGconSave      : std_logic := '0';
+   signal dsSave          : std_logic := '0';
 
    signal prevMouseEvent  : std_logic := '0';
 
@@ -91,15 +116,31 @@ architecture arch of joypad_pad is
   
    signal analogLarge     : std_logic_vector(7 downto 0);
   
+   type portState is record
+      dsConfigMode  : std_logic;
+      dsAnalogMode  : std_logic;
+      dsAnalogLock  : std_logic;
+   end record;
+   type portState_array is array(0 to 1) of portState;
+   signal portStates : portState_array;
+
+   signal dsConfigModeSave  : std_logic := '0';
+   signal dsAnalogModeSave  : std_logic := '0';
+
    type tresponse is array (natural range <>) of std_logic_vector(7 downto 0);
    constant response : tresponse :=(
-      x"00", x"01",
-      x"00", x"05", x"00", x"00", 
-      x"00", x"00", x"56"
+      x"00", x"00", x"00", x"00", x"00", x"00", -- padding
+      x"01", x"02", -- analog get part 1
+      x"02", x"01", x"00", -- analog get part 2
+      x"00", x"01", x"02", x"00", x"0A", -- 46+00
+      x"00", x"01", x"01", x"01", x"14", -- 46+01
+      x"00", x"02", x"00", x"01", x"00", -- 47
+      x"00", x"00", x"04", x"00", x"00", -- 4C+00
+      x"00", x"00", x"07", x"00", x"00" -- 4C+01
    );
-  
-   signal rom_pointer : integer range 0 to 7;
-   signal bytecount   : integer range 0 to 4;
+
+   signal rom_pointer : integer range 0 to 36;
+   signal bytecount   : integer range 0 to 6;
   
 begin 
 
@@ -145,12 +186,22 @@ begin
             rumble          <= (others => '0');
             mouseAccX       <= (others => '0');
             mouseAccY       <= (others => '0');
+            dsConfigModeSave  <= '0';
+            dsAnalogModeSave  <= '0';
+            portStates(0).dsConfigMode <= '0';
+            portStates(0).dsAnalogMode <= '0';
+            portStates(0).dsAnalogLock <= '0';
+            portStates(1).dsConfigMode <= '0';
+            portStates(1).dsAnalogMode <= '0';
+            portStates(1).dsAnalogLock <= '0';
+            nextState       <= IDLE;
 
          elsif (ce = '1') then
          
             if (selected = '0') then
                isActive        <= '0';
                controllerState <= IDLE;
+               command         <= COMMAND_NONE;
             end if;
 
             prevMouseEvent  <= MouseEvent;
@@ -195,14 +246,17 @@ begin
                         mouseSave       <= joypad.PadPortMouse;
                         gunConSave      <= joypad.PadPortGunCon;
                         neGconSave      <= joypad.PadPortNeGcon;
+                        dsSave          <= joypad.PadPortDS;
                         receiveValid    <= '1';
                         receiveBuffer   <= x"FF";
-
+                        dsConfigModeSave  <= portStates(portNr).dsConfigMode;
+                        dsAnalogModeSave  <= portStates(portNr).dsAnalogMode;
                      end if;
                   elsif (isActive = '1') then
                      case (controllerState) is
                         when IDLE => 
                            if (transmitValue = x"01") then
+                              command         <= COMMAND_NONE;
                               controllerState <= READY;
                               isActive        <= '1';
                               ack             <= '1';
@@ -210,19 +264,25 @@ begin
                               mouseSave       <= joypad.PadPortMouse;
                               gunConSave      <= joypad.PadPortGunCon;
                               neGconSave      <= joypad.PadPortNeGcon;
+                              dsSave          <= joypad.PadPortDS;
                               receiveValid    <= '1';
                               receiveBuffer   <= x"FF";
+                              dsConfigModeSave  <= portStates(portNr).dsConfigMode;
+                              dsAnalogModeSave  <= portStates(portNr).dsAnalogMode;
                            end if;
                            
                         when READY => 
                            if (transmitValue = x"42") then
-                              if (mouseSave = '1') then
+                              command <= COMMAND_READ_INPUTS;
+                              if (dsSave = '1' and dsConfigModeSave = '1') then
+                                 receiveBuffer   <= x"F3";
+                              elsif (mouseSave = '1') then
                                  receiveBuffer   <= x"12";
                               elsif (gunConSave = '1') then
                                  receiveBuffer   <= x"63";
                               elsif (neGconSave = '1') then
                                  receiveBuffer   <= x"23";
-                              elsif (analogPadSave = '1') then
+                              elsif (analogPadSave = '1' or dsAnalogModeSave = '1') then
                                  receiveBuffer   <= x"73";
                               else
                                  receiveBuffer   <= x"41";
@@ -230,6 +290,63 @@ begin
                               controllerState <= ID;
                               ack             <= '1';
                               receiveValid    <= '1';
+                           elsif (transmitValue = x"43") then
+                              command <= COMMAND_CHANGE_CONFIG_MODE;
+                              if (dsSave = '1') then
+                                 if (dsConfigModeSave = '1') then
+                                    receiveBuffer   <= x"F3";
+                                 elsif (dsAnalogModeSave = '1') then
+                                    receiveBuffer   <= x"73";
+                                 else
+                                    receiveBuffer   <= x"41";
+                                 end if;
+                                 controllerState <= ID;
+                                 ack             <= '1';
+                                 receiveValid    <= '1';
+                              end if;
+                           elsif (transmitValue = x"44") then
+                              command <= COMMAND_SET_STATE;
+                              if (dsSave = '1' and dsConfigModeSave = '1') then
+                                 receiveBuffer   <= x"F3";
+                                 controllerState <= ID;
+                                 ack             <= '1';
+                                 receiveValid    <= '1';
+                              end if;
+                           elsif (transmitValue = x"45") then
+                              command <= COMMAND_GET_STATE;
+                              if (dsSave = '1' and dsConfigModeSave = '1') then
+                                 receiveBuffer   <= x"F3";
+                                 controllerState <= ID;
+                                 ack             <= '1';
+                                 receiveValid    <= '1';
+                              end if;
+                           elsif (transmitValue = x"46") then
+                              command <= COMMAND_46;
+                              if (dsSave = '1' and dsConfigModeSave = '1') then
+                                 receiveBuffer   <= x"F3";
+                                 controllerState <= ID;
+                                 ack             <= '1';
+                                 receiveValid    <= '1';
+                              end if;
+                           elsif (transmitValue = x"47") then
+                              command <= COMMAND_47;
+                              if (dsSave = '1' and dsConfigModeSave = '1') then
+                                 receiveBuffer   <= x"F3";
+                                 controllerState <= ID;
+                                 ack             <= '1';
+                                 receiveValid    <= '1';
+                              end if;
+                           elsif (transmitValue = x"4C") then
+                              command <= COMMAND_4C;
+                              if (dsSave = '1' and dsConfigModeSave = '1') then
+                                 receiveBuffer   <= x"F3";
+                                 controllerState <= ID;
+                                 ack             <= '1';
+                                 receiveValid    <= '1';
+                              end if;
+                           else
+                              controllerState <= IDLE;
+                              command <= COMMAND_UNKNOWN;
                            end if;
                            
                         when ID => 
@@ -242,15 +359,85 @@ begin
                                controllerState <= BUTTONLSB;
                            end if;
                            
-                           case (transmitValue) is
-                              when x"01" => controllerState <= ROMRESPONSE; rom_pointer <= 0; bytecount <= 1;
-                              when x"02" => controllerState <= ROMRESPONSE; rom_pointer <= 2; bytecount <= 3;
-                              when x"03" => controllerState <= ROMRESPONSE; rom_pointer <= 6; bytecount <= 2;
-                           end case;
-                           
+                           if (command = COMMAND_CHANGE_CONFIG_MODE and dsConfigModeSave = '1') then
+                              controllerState <= CHANGECONFIG;
+                           elsif (command = COMMAND_SET_STATE) then
+                              controllerState <= SETSTATELSB;
+                           elsif (command = COMMAND_46) then
+                              controllerState <= COMMAND46;
+                           elsif (command = COMMAND_47) then
+                              controllerState <= COMMAND47;
+                           elsif (command = COMMAND_4C) then
+                              controllerState <= COMMAND4C;
+                           elsif (command = COMMAND_GET_STATE) then
+                              rom_pointer <= 6; bytecount <= 2;
+                              controllerState <= ROMRESPONSE; nextState <= GETSTATE;
+                           end if;
+
                            ack             <= '1';
                            receiveValid    <= '1';
-                           
+
+                        when CHANGECONFIG =>
+                           receiveValid    <= '1';
+                           ack             <= '1';
+                           if (transmitValue = x"01") then
+                              portStates(portNr).dsConfigMode <= '1';
+                           elsif (transmitValue = x"00") then
+                              portStates(portNr).dsConfigMode <= '0';
+                           end if;
+                           rom_pointer <= 0; bytecount <= 5;
+                           controllerState <= ROMRESPONSE; nextState <= IDLE;
+
+                        when COMMAND46 =>
+                           receiveValid    <= '1';
+                           ack             <= '1';
+                           if (transmitValue = x"00") then
+                              rom_pointer <= 11;
+                           elsif (transmitValue = x"01") then
+                              rom_pointer <= 16;
+                           else
+                              rom_pointer <= 0;
+                           end if;
+                           bytecount <= 5;
+                           controllerState <= ROMRESPONSE; nextState <= IDLE;
+
+                        when COMMAND47 =>
+                           receiveValid    <= '1';
+                           ack             <= '1';
+                           if (transmitValue = x"00") then
+                              rom_pointer <= 21;
+                           else
+                              rom_pointer <= 0;
+                           end if;
+                           bytecount <= 5;
+                           controllerState <= ROMRESPONSE; nextState <= IDLE;
+
+                        when COMMAND4C =>
+                           receiveValid    <= '1';
+                           ack             <= '1';
+                           if (transmitValue = x"00") then
+                              rom_pointer <= 26;
+                           elsif (transmitValue = x"01") then
+                              rom_pointer <= 31;
+                           else
+                              rom_pointer <= 0;
+                           end if;
+                           bytecount <= 5;
+                           controllerState <= ROMRESPONSE; nextState <= IDLE;
+
+                        when GETSTATE =>
+                           if (dsAnalogModeSave = '1') then
+                              receiveBuffer   <= x"01";
+                           else
+                              receiveBuffer   <= x"00";
+                           end if;
+
+                           receiveValid    <= '1';
+                           ack             <= '1';
+
+                           rom_pointer <= 8; bytecount <= 3;
+                           controllerState <= ROMRESPONSE; nextState <= IDLE;
+
                         when MOUSEBUTTONSLSB =>
                            controllerState <= MOUSEBUTTONSMSB;
                            receiveBuffer   <= x"FF";
@@ -401,7 +588,15 @@ begin
                            if (analogPadSave = '1' and (transmitValue(7) = '1' or  transmitValue(6) = '1')) then
                               rumbleOnFirst <= '1';
                            end if;
-                           
+
+                           if (command = COMMAND_CHANGE_CONFIG_MODE) then
+                              if (transmitValue = x"01") then
+                                 portStates(portNr).dsConfigMode <= '1';
+                              elsif (transmitValue = x"00") then
+                                 portStates(portNr).dsConfigMode <= '0';
+                              end if;
+                           end if;
+
                         when BUTTONMSB => 
                            receiveBuffer(0) <= not joypad.KeyL2;
                            receiveBuffer(1) <= not joypad.KeyR2;
@@ -412,7 +607,7 @@ begin
                            receiveBuffer(6) <= not joypad.KeyCross;
                            receiveBuffer(7) <= not joypad.KeySquare;
                            receiveValid     <= '1';
-                           if (analogPadSave = '1') then
+                           if (analogPadSave = '1' or dsAnalogModeSave = '1' or dsConfigModeSave = '1') then
                               controllerState <= ANALOGRIGHTX;
                               ack <= '1';
                            else
@@ -507,15 +702,46 @@ begin
                            end if;
                            receiveValid    <= '1';
                            controllerState <= IDLE;
-                           
+
                         when ROMRESPONSE =>
-                           receiveBuffer   <= response(rom_pointer);
-                           receiveValid    <= '1';
                            if (bytecount > 0) then
+                              receiveBuffer   <= response(rom_pointer);
+                              receiveValid    <= '1';
                               bytecount <= bytecount - 1;
+                              rom_pointer <= rom_pointer + 1;
+                              ack <= '1';
                            else
-                              controllerState <= IDLE;
+                              nextState <= IDLE; -- we shouldn't normally get here
                            end if;
+
+                           if (bytecount = 1) then -- last byte, prepare next state
+                              nextState <= IDLE;
+                              controllerState <= nextState;
+                              if (nextState = IDLE) then
+                                 ack <= '0';
+                              end if;
+                           end if;
+
+                        when SETSTATELSB =>
+                           if (transmitValue = x"00") then
+                              portStates(portNr).dsAnalogMode<= '0';
+                           elsif  (transmitValue = x"01") then
+                              portStates(portNr).dsAnalogMode<= '1';
+                           end if;
+                           receiveValid    <= '1';
+                           ack <= '1';
+                           controllerState <= SETSTATEMSB;
+
+                        when SETSTATEMSB =>
+                           if (transmitValue = x"02") then
+                              portStates(portNr).dsAnalogLock <= '0';
+                           elsif (transmitValue = x"03") then
+                              portStates(portNr).dsAnalogLock <= '1';
+                           end if;
+                           receiveValid    <= '1';
+                           ack <= '1';
+                           rom_pointer <= 0; bytecount <= 4;
+                           controllerState <= ROMRESPONSE; nextState <= IDLE;
 
                      end case;
                   end if;

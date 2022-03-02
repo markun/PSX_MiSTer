@@ -109,6 +109,8 @@ architecture arch of joypad is
    signal selectedPort2       : std_logic;
    signal selectedPort        : std_logic;
    signal selectedPort_1      : std_logic;
+
+   signal portNr              : integer range 0 to 1;
       
    signal ack                 : std_logic;
    signal ackPad              : std_logic;
@@ -357,6 +359,7 @@ begin
    GunX            <= Gun2X when selectedPort2 else Gun1X;
    GunY_scanlines  <= Gun2Y_scanlines when selectedPort2 else Gun1Y_scanlines;
    GunAimOffscreen <= Gun2AimOffscreen when selectedPort2 else Gun1AimOffscreen;
+   portNr <= 0 when JOY_CTRL(13) = '0' else 1;
 
    ijoypad_pad : entity work.joypad_pad
    port map
@@ -367,6 +370,8 @@ begin
        
       joypad               => joypad_selected,
       rumble               => rumble_selected,
+      portNr               => portNr,
+
       isPal                => isPal,
 
       selected             => selectedPort,

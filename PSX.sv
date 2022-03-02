@@ -368,8 +368,8 @@ parameter CONF_STR = {
 	"-;",
 	"o78,System Type,NTSC-U,NTSC-J,PAL;",
 	"-;",
-	"oDF,Pad1,Digital,Analog,Mouse,Off,GunCon,NeGcon;",
-	"oGI,Pad2,Digital,Analog,Mouse,Off,GunCon,NeGcon;",
+	"oDF,Pad1,Digital,Analog,Mouse,Off,GunCon,NeGcon,DS;",
+	"oGI,Pad2,Digital,Analog,Mouse,Off,GunCon,NeGcon,DS;",
 	"-;",
 	"OS,FPS Overlay,Off,On;",
 	"OT,Error Overlay,On,Off;",
@@ -718,12 +718,14 @@ wire PadPortAnalog1 = (status[47:45] == 3'b001);
 wire PadPortMouse1  = (status[47:45] == 3'b010);
 wire PadPortGunCon1 = (status[47:45] == 3'b100);
 wire PadPortNeGcon1 = (status[47:45] == 3'b101);
+wire PadPortDS1     = (status[47:45] == 3'b110);
 
 wire PadPortEnable2 = (status[50:48] != 3'b011);
 wire PadPortAnalog2 = (status[50:48] == 3'b001);
 wire PadPortMouse2  = (status[50:48] == 3'b010);
 wire PadPortGunCon2 = (status[50:48] == 3'b100);
 wire PadPortNeGcon2 = (status[50:48] == 3'b101);
+wire PadPortDS2     = (status[50:48] == 3'b110);
 
 
 ////////////////////////////  PAUSE  ///////////////////////////////////
@@ -874,11 +876,13 @@ psx
    .PadPortMouse1  (PadPortMouse1 ),
    .PadPortGunCon1 (PadPortGunCon1),
    .PadPortNeGcon1 (PadPortNeGcon1),
+   .PadPortDS1     (PadPortDS1),
    .PadPortEnable2 (PadPortEnable2),
    .PadPortAnalog2 (PadPortAnalog2),
    .PadPortMouse2  (PadPortMouse2 ),
    .PadPortGunCon2 (PadPortGunCon2),
    .PadPortNeGcon2 (PadPortNeGcon2),
+   .PadPortDS2     (PadPortDS2),
    .KeyTriangle({joy2[4], joy[4] }),    
    .KeyCircle  ({joy2[5] ,joy[5] }),       
    .KeyCross   ({joy2[6] ,joy[6] }),       
