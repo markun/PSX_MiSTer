@@ -505,8 +505,8 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(4), .BLKSZ(3)) hps_io
 	.status_in(status_in),
 	.status_set(statusUpdate),
 	.status_menumask(status_menumask),
-	.info_req(ss_info_req),
-	.info(ss_info),
+	.info_req(psx_info_req),
+	.info(psx_info),
 
 	.ioctl_addr(ioctl_addr),
 	.ioctl_dout(ioctl_dout),
@@ -674,8 +674,9 @@ end
 ///////////////////////////  SAVESTATE  /////////////////////////////////
 
 wire [1:0] ss_slot;
-wire [7:0] ss_info;
-wire ss_save, ss_load, ss_info_req;
+wire ss_save, ss_load;
+wire [7:0] psx_info;
+wire psx_info_req;
 wire statusUpdate;
 
 savestate_ui savestate_ui
@@ -695,8 +696,8 @@ savestate_ui savestate_ui
 	.OSD_saveload   (status[18:17] ),
 	.ss_save        (ss_save       ),
 	.ss_load        (ss_load       ),
-	.ss_info_req    (ss_info_req   ),
-	.ss_info        (ss_info       ),
+	.psx_info_req   (psx_info_req  ),
+	.psx_info       (psx_info      ),
 	.statusUpdate   (statusUpdate  ),
 	.selected_slot  (ss_slot       )
 );

@@ -15,8 +15,8 @@ module savestate_ui #(parameter INFO_TIMEOUT_BITS)
 	input      [1:0] OSD_saveload,
 	output reg       ss_save,
 	output reg       ss_load,
-	output reg       ss_info_req,
-	output reg [7:0] ss_info,
+	output reg       psx_info_req,
+	output reg [7:0] psx_info,
 	output reg       statusUpdate,
 	output     [1:0] selected_slot
 );
@@ -53,7 +53,7 @@ always @(posedge clk) begin
 	
 	ss_save      <= 1'b0;
 	ss_load      <= 1'b0;
-	ss_info_req  <= 1'b0;
+	psx_info_req <= 1'b0;
 	statusUpdate <= 1'b0;
 	
 	lastOSDsetting <= status_slot;
@@ -81,8 +81,8 @@ always @(posedge clk) begin
 			// timeout with no button pressed -> help text
 			InfoWaitcnt <= InfoWaitcnt + 1'b1;
 			if (InfoWaitcnt[(INFO_TIMEOUT_BITS-1)]) begin
-				ss_info     <= 7'd1;
-				ss_info_req <= 1'b1;
+				psx_info     <= 7'd1;
+				psx_info_req <= 1'b1;
 				InfoWaitcnt <= 25'b0;
 			end
 			// switch slot
@@ -119,19 +119,19 @@ always @(posedge clk) begin
 
 		// infotexts
 		if (slotswitched) begin
-			ss_info     <= 7'd2 + ss_base;
-			ss_info_req <= 1'b1;
+			psx_info     <= 7'd2 + ss_base;
+			psx_info_req <= 1'b1;
 		end
 
 		if(ss_load | ss_save) begin
-			ss_info     <= 7'd6 + {ss_base, ss_load};
-			ss_info_req <= 1'b1;
+			psx_info     <= 7'd6 + {ss_base, ss_load};
+			psx_info_req <= 1'b1;
 		end
 		
 		// rewind info
 		if (rewindEnable & joyRewind) begin
-			ss_info_req <= 1'b1;
-			ss_info     <= 7'd14;
+			psx_info_req <= 1'b1;
+			psx_info     <= 7'd14;
 		end
 
 	end
