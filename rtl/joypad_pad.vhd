@@ -66,7 +66,8 @@ architecture arch of joypad_pad is
       NEGCONSTEERING,
       NEGCONANALOGI,
       NEGCONANALOGII,
-      NEGCONANALOGL
+      NEGCONANALOGL,
+      ROMRESPONSE
    );
    signal controllerState : tcontrollerState := IDLE;
    
@@ -89,6 +90,16 @@ architecture arch of joypad_pad is
    signal gunConY         : std_logic_vector(8 downto 0) := (others => '0');
   
    signal analogLarge     : std_logic_vector(7 downto 0);
+  
+   type tresponse is array (natural range <>) of std_logic_vector(7 downto 0);
+   constant response : tresponse :=(
+      x"00", x"01",
+      x"00", x"05", x"00", x"00", 
+      x"00", x"00", x"56"
+   );
+  
+   signal rom_pointer : integer range 0 to 7;
+   signal bytecount   : integer range 0 to 4;
   
 begin 
 
@@ -230,6 +241,13 @@ begin
                            else
                                controllerState <= BUTTONLSB;
                            end if;
+                           
+                           case (transmitValue) is
+                              when x"01" => controllerState <= ROMRESPONSE; rom_pointer <= 0; bytecount <= 1;
+                              when x"02" => controllerState <= ROMRESPONSE; rom_pointer <= 2; bytecount <= 3;
+                              when x"03" => controllerState <= ROMRESPONSE; rom_pointer <= 6; bytecount <= 2;
+                           end case;
+                           
                            ack             <= '1';
                            receiveValid    <= '1';
                            
@@ -489,6 +507,15 @@ begin
                            end if;
                            receiveValid    <= '1';
                            controllerState <= IDLE;
+                           
+                        when ROMRESPONSE =>
+                           receiveBuffer   <= response(rom_pointer);
+                           receiveValid    <= '1';
+                           if (bytecount > 0) then
+                              bytecount <= bytecount - 1;
+                           else
+                              controllerState <= IDLE;
+                           end if;
 
                      end case;
                   end if;
