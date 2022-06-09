@@ -19,8 +19,12 @@ entity joypad is
       DSAltSwitchMode      : in  std_logic;
       joypad1              : in  joypad_t;
       joypad2              : in  joypad_t;
+      joypad3              : in  joypad_t;
+      joypad4              : in  joypad_t;
       joypad1_rumble       : out std_logic_vector(15 downto 0) := (others => '0');
       joypad2_rumble       : out std_logic_vector(15 downto 0) := (others => '0');
+      joypad3_rumble       : out std_logic_vector(15 downto 0) := (others => '0');
+      joypad4_rumble       : out std_logic_vector(15 downto 0) := (others => '0');
       padMode              : out std_logic_vector(1 downto 0);
 
       memcard1_available   : in  std_logic;
