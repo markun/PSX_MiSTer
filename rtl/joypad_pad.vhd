@@ -577,6 +577,7 @@ begin
                               bytecount       <= 28;
                               controllerState <= ROMRESPONSE; 
                               nextState       <= IDLE;
+                              ack <= '1';
                            elsif (analogPadSave = '1' or dsAnalogModeSave = '1' or dsConfigModeSave = '1') then
                               controllerState <= ANALOGRIGHTX;
                               ack <= '1';
