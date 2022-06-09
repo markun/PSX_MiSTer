@@ -170,6 +170,7 @@ architecture arch of joypad_pad is
    signal rom_pointer : integer range 0 to 64;
    signal bytecount   : integer range 0 to 28;
    signal rumblecount : integer range 0 to 5;
+   signal multitap_counter : integer range 0 to 3;
   
 begin 
 
@@ -488,6 +489,7 @@ begin
                            receiveBuffer   <= x"5A";
                            if (multitapModeSave = '1') then
                                controllerState <= MULTITAP_READY;
+                               multitap_counter <= 0;
                            elsif (mouseSave = '1') then
                                controllerState <= MOUSEBUTTONSLSB;
                            elsif (gunConSave = '1') then
@@ -574,9 +576,16 @@ begin
                            receiveValid     <= '1';
                            if (multitapModeSave = '1') then
                               rom_pointer     <= 36; -- just lots of FF padding
-                              bytecount       <= 28;
+                              bytecount       <= 4;
                               controllerState <= ROMRESPONSE; 
-                              nextState       <= IDLE;
+
+                              if (multitap_counter = 3) then
+                                  nextState       <= IDLE;
+                              else
+                                  nextState       <= MULTITAP_READY;
+                                  multitap_counter <= multitap_counter + 1;
+                              end if;
+
                               ack <= '1';
                            elsif (analogPadSave = '1' or dsAnalogModeSave = '1' or dsConfigModeSave = '1') then
                               controllerState <= ANALOGRIGHTX;
