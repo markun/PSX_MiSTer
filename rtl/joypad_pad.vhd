@@ -344,7 +344,7 @@ begin
             end if;
          
             if (actionNext = '1' and transmitting = '1') then
-               if (selected = '1' and joypad.PadPortEnable = '1') then
+               if (selected = '1' and ((isMultitap = '0' and joypad.PadPortEnable = '1') or (isMultitap = '1' and portNr = 0))) then
                   if (isActive = '0' and slotIdle = '1') then
                      if (controllerState = IDLE and transmitValue = x"01") then
                         controllerState <= READY;
