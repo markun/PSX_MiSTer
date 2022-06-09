@@ -439,6 +439,16 @@ begin
       joypad2.Analog2Y      => Analog2YP2,
       joypad2_rumble        => RumbleDataP2,
 
+      -- fixme, these should probably be joyPORT settings, not joyPAD
+      joypad3.PadPortEnable => '1',
+      joypad3.PadPortAnalog => '0',
+      joypad3.PadPortMouse  => '0',
+      joypad3.PadPortGunCon => '0',
+      joypad3.PadPortNeGcon => '0',
+      joypad3.PadPortJustif => '0',
+      joypad3.WheelMap      => '0',
+      joypad3.PadPortDS     => '0',
+
       joypad3.KeyTriangle   => KeyTriangle(2),
       joypad3.KeyCircle     => KeyCircle(2),
       joypad3.KeyCross      => KeyCross(2),
@@ -460,6 +470,15 @@ begin
       joypad3.Analog2X      => Analog2XP3,
       joypad3.Analog2Y      => Analog2YP3,
       joypad3_rumble        => RumbleDataP3,
+
+      joypad4.PadPortEnable => '1',
+      joypad4.PadPortAnalog => '0',
+      joypad4.PadPortMouse  => '0',
+      joypad4.PadPortGunCon => '0',
+      joypad4.PadPortNeGcon => '0',
+      joypad4.PadPortJustif => '0',
+      joypad4.WheelMap      => '0',
+      joypad4.PadPortDS     => '0',
 
       joypad4.KeyTriangle   => KeyTriangle(3),
       joypad4.KeyCircle     => KeyCircle(3),
