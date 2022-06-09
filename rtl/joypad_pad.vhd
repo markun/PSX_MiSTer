@@ -12,7 +12,11 @@ entity joypad_pad is
       reset                : in  std_logic;
       
       DSAltSwitchMode      : in  std_logic;
-      joypad               : in  joypad_t;
+      isMultitap           : in  std_logic := '1';
+      joypad1              : in  joypad_t;
+      joypad2              : in  joypad_t;
+      joypad3              : in  joypad_t;
+      joypad4              : in  joypad_t;
       rumble               : out std_logic_vector(15 downto 0);
       padMode              : out std_logic_vector(1 downto 0);
       portNr               : in integer range 0 to 1;
@@ -105,6 +109,8 @@ architecture arch of joypad_pad is
    );
    signal command : tcommands := COMMAND_NONE;
 
+   signal joypad          : joypad_t;
+
    signal analogPadSave   : std_logic := '0';
    signal rumbleOnFirst   : std_logic := '0';
    signal mouseSave       : std_logic := '0';
@@ -170,7 +176,7 @@ architecture arch of joypad_pad is
    signal rom_pointer : integer range 0 to 64;
    signal bytecount   : integer range 0 to 28;
    signal rumblecount : integer range 0 to 5;
-   signal multitap_counter : integer range 0 to 3;
+   signal multitap_counter : integer range 0 to 3 := 0;
   
 begin 
 
@@ -184,6 +190,12 @@ begin
    ss_out(11 downto 8)  <= std_logic_vector(to_signed(portStates(0).dsRumbleIndexL,4));   
    ss_out(12)           <= portStates(0).multitapMode;
    ss_out(31 downto 13) <= (others => '0');
+
+   joypad <= joypad2 when portNr = 1 else
+             joypad1 when multitap_counter = 0 else
+             joypad2 when multitap_counter = 1 else
+             joypad3 when multitap_counter = 2 else
+             joypad4 when multitap_counter = 3;
    
    process (clk1x)
       variable mouseIncX            : signed(9 downto 0) := (others => '0');

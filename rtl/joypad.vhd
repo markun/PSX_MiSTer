@@ -156,7 +156,6 @@ architecture arch of joypad is
    signal receiveValidMem1    : std_logic;
    signal receiveValidMem2    : std_logic;
 
-   signal joypad_selected     : joypad_t;
    signal rumble_selected     : std_logic_vector(15 downto 0);
    signal rumble_previous     : std_logic_vector(15 downto 0);
    signal GunX                : unsigned(7 downto 0);
@@ -390,7 +389,6 @@ begin
                  '1' when (JOY_CTRL(13) = '1' and JOY_CTRL(1 downto 0) = "11" and snacPort2 = '0') else 
                  '0';
 
-   joypad_selected <= joypad2 when selectedPort2 else joypad1;
    GunX            <= Gun2X when selectedPort2 else Gun1X;
    GunY_scanlines  <= Gun2Y_scanlines when selectedPort2 else Gun1Y_scanlines;
    GunAimOffscreen <= Gun2AimOffscreen when selectedPort2 else Gun1AimOffscreen;
@@ -404,7 +402,10 @@ begin
       reset                => reset,    
        
       DSAltSwitchMode      => DSAltSwitchMode,
-      joypad               => joypad_selected,
+      joypad1               => joypad1,
+      joypad2               => joypad2,
+      joypad3               => joypad3,
+      joypad4               => joypad4,
       rumble               => rumble_selected,
       padMode              => padMode,
       portNr               => portNr,
