@@ -393,7 +393,13 @@ begin
                            ack             <= '1';
                            receiveValid    <= '1';
                         when READY => 
-                           if (transmitValue = x"42") then
+                           if (multitapModeSave = '1' and transmitValue /= x"42") then
+                              command <= COMMAND_UNKNOWN;
+                              receiveBuffer   <= x"80";
+                              controllerState <= ID;
+                              ack             <= '1';
+                              receiveValid    <= '1';
+                           elsif (transmitValue = x"42") then
                               command <= COMMAND_READ_INPUTS;
                               if (multitapModeSave = '1') then
                                  receiveBuffer   <= x"80";
@@ -532,7 +538,12 @@ begin
                               nextState       <= GETSTATE;
                            end if;
 
-                           ack             <= '1';
+                           if (command = COMMAND_UNKNOWN) then
+                              controllerState <= IDLE;
+                           else
+                              ack             <= '1';
+                           end if;
+
                            receiveValid    <= '1';
                            
 -- ##############################################################################
