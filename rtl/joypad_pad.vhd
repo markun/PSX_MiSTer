@@ -177,6 +177,8 @@ architecture arch of joypad_pad is
    signal bytecount   : integer range 0 to 28;
    signal rumblecount : integer range 0 to 5;
    signal multitap_counter : integer range 0 to 3 := 0;
+
+   signal multitap_valid : std_logic_vector(3 downto 0) := (others => '0');
   
 begin 
 
@@ -388,8 +390,29 @@ begin
 -- ##############################################################################
                            
                         when MULTITAP_READY =>
-                           receiveBuffer   <= x"41"; -- just for testing, always reply with digital controller
-                           controllerState <= MULTITAP_ID;
+                           if (multitap_valid(multitap_counter) = '1') then
+                              receiveBuffer   <= x"41"; -- just for testing, always reply with digital controller
+                              controllerState <= MULTITAP_ID;
+                           else
+                              receiveBuffer   <= x"FF";
+                              rom_pointer     <= 36; -- just lots of FF padding
+                              bytecount       <= 7;
+                              controllerState <= ROMRESPONSE;
+
+                              if (multitap_counter = 3) then
+                                 nextState       <= IDLE;
+                              else
+                                 nextState       <= MULTITAP_READY;
+                                 multitap_counter <= multitap_counter + 1;
+                              end if;
+                           end if;
+
+                           if (transmitValue = x"42") then
+                              multitap_valid(multitap_counter) <= '1';
+                           else
+                              multitap_valid(multitap_counter) <= '0';
+                           end if;
+
                            ack             <= '1';
                            receiveValid    <= '1';
                         when READY => 
